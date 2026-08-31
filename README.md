@@ -1,6 +1,6 @@
 # Solid Run
 
-A lightweight, zero-config local CI webhook listener written in pure Ruby.
+A lightweight, zero-config local CI webhook listener.
 
 It automatically creates an ephemeral **Cloudflare Quick Tunnel**, registers a temporary webhook on your GitHub repository via the `gh` CLI, listens for incoming GitHub events (`push`, `pull_request`, `ping`, `workflow_dispatch`), and pretty-prints them in your terminal. When you stop the tool (`Ctrl+C`), it cleans up by deleting the webhook and terminating the tunnel.
 
@@ -33,6 +33,7 @@ Local CI Event Printer (Terminal stdout)
 ## 📦 Prerequisites
 
 Make sure the following tools are installed and in your `$PATH`:
+
 - **Ruby** (3.0+)
 - **GitHub CLI (`gh`)**: authenticated via `gh auth login`
 - **Cloudflare CLI (`cloudflared`)**: installed (no login required)
@@ -43,11 +44,13 @@ Make sure the following tools are installed and in your `$PATH`:
 ## 🚀 Quickstart
 
 1. Clone or navigate into any Git repository that has a GitHub remote `origin`:
+
    ```bash
    cd /path/to/your/github-repo
    ```
 
 2. Run `local-ci`:
+
    ```bash
    /home/netale/projects/personal/local-ci/bin/local-ci
    ```
@@ -80,12 +83,12 @@ Usage: local-ci [options]
 
 `local-ci` includes an intelligent **GitHub Actions Workflow Matching Engine** (`LocalCI::WorkflowMatcher`) that evaluates all `.github/workflows/*.yml` files against incoming events just like GitHub Actions does:
 
-* **Branch Filters**: Respects `branches:` and `branches-ignore:` (e.g. `main`, `release/**`).
-* **Path Filters**: Inspects changed files in the push/PR commits against `paths:` and `paths-ignore:` (e.g. `lib/**`, `!docs/**`).
-* **Tag Filters**: Matches `tags:` and `tags-ignore:` for release tags (e.g. `v*`).
-* **Pull Request Types**: Matches `types:` (e.g. `opened`, `synchronize`, `reopened`).
-* **Selective Execution**: Only triggers `act -W .github/workflows/<file>.yml` for matched workflows. If no workflow matches the changed files/branch, execution is skipped with zero overhead.
-* **Commit Status Reporting**: Updates GitHub commit statuses (`pending` ⏳ -> `success` ✅ / `failure` ❌) with elapsed execution times.
+- **Branch Filters**: Respects `branches:` and `branches-ignore:` (e.g. `main`, `release/**`).
+- **Path Filters**: Inspects changed files in the push/PR commits against `paths:` and `paths-ignore:` (e.g. `lib/**`, `!docs/**`).
+- **Tag Filters**: Matches `tags:` and `tags-ignore:` for release tags (e.g. `v*`).
+- **Pull Request Types**: Matches `types:` (e.g. `opened`, `synchronize`, `reopened`).
+- **Selective Execution**: Only triggers `act -W .github/workflows/<file>.yml` for matched workflows. If no workflow matches the changed files/branch, execution is skipped with zero overhead.
+- **Commit Status Reporting**: Updates GitHub commit statuses (`pending` ⏳ -> `success` ✅ / `failure` ❌) with elapsed execution times.
 
 To run in listen-only mode without executing workflows, pass `--no-act`.
 
