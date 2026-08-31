@@ -1,6 +1,6 @@
 # Solid Run
 
-A lightweight, zero-config local CI webhook listener.
+A lightweight, zero-config local CI web hook listener.
 
 It automatically creates an ephemeral **Cloudflare Quick Tunnel**, registers a temporary web hook on your GitHub repository via the `gh` CLI, listens for incoming GitHub events (`push`, `pull_request`, `ping`, `workflow_dispatch`), and pretty-prints them in your terminal. When you stop the tool (`Ctrl+C`), it cleans up by deleting the web hook and terminating the tunnel.
 
