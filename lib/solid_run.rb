@@ -14,6 +14,7 @@ require_relative "solid_run/webhook"
 require_relative "solid_run/status_reporter"
 require_relative "solid_run/workflow_matcher"
 require_relative "solid_run/act_runner"
+require_relative "solid_run/log_parser"
 
 module SolidRun
   class Error < StandardError; end

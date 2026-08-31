@@ -8,13 +8,66 @@
   <%= render "runs/run_header", run: @run %>
 </div>
 
-<div style="margin-top: 1.5rem;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-    <h3 style="margin: 0; font-size: 1.1rem;">Live Build Logs</h3>
-    <span style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">
-      <%= @run.workflow_files %>
-    </span>
+<% parsed_steps = SolidRun::LogParser.parse(@run.logs) %>
+
+<div style="margin-top: 2rem;" data-controller="step-viewer">
+  <!-- Controls Bar -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700;">Execution Steps</h3>
+      <span style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">
+        <%= @run.workflow_files %>
+      </span>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem;">
+      <button type="button" class="btn" data-action="click->step-viewer#expandAll" style="font-size: 0.8rem;">
+        Expand All
+      </button>
+      <button type="button" class="btn" data-action="click->step-viewer#collapseAll" style="font-size: 0.8rem;">
+        Collapse All
+      </button>
+      <button type="button" class="btn" data-action="click->step-viewer#toggleView" data-step-viewer-target="viewToggleBtn" style="font-size: 0.8rem;">
+        💻 View Raw Terminal Logs
+      </button>
+    </div>
   </div>
 
-  <div class="terminal" id="run_logs_<%= @run.id %>" data-controller="terminal"><%= @run.logs.presence || "⏳ Waiting for Solid Queue worker..." %></div>
+  <!-- Structured Steps Accordion Container -->
+  <div data-step-viewer-target="stepsContainer" id="steps_view_container">
+    <% if parsed_steps.any? %>
+      <% parsed_steps.each do |step| %>
+        <details class="step-card <%= step.status %>" <%= "open" if step.status == "failure" || step.status == "in_progress" || parsed_steps.size <= 3 %>>
+          <summary class="step-header">
+            <div class="step-title">
+              <span class="step-icon">
+                <%= step.status == "success" ? "✅" : (step.status == "failure" ? "❌" : "⚙️") %>
+              </span>
+              <span class="step-name"><%= step.name %></span>
+              <span class="step-job-badge"><%= step.job %></span>
+            </div>
+            <span class="step-status-text">
+              <%= step.status.capitalize %>
+            </span>
+          </summary>
+          <div class="step-body">
+            <% step.lines.each do |line| %>
+              <div class="step-line"><%= line %></div>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+    <% else %>
+      <div class="step-card in-progress" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+        ⏳ Initializing workflow and starting Docker runner...
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Raw Terminal Logs (hidden by default unless toggled) -->
+  <div class="terminal"
+       id="run_logs_<%= @run.id %>"
+       data-step-viewer-target="rawContainer"
+       data-controller="terminal"
+       style="display: none; margin-top: 1rem;"><%= @run.logs.presence || "⏳ Waiting for Solid Queue worker..." %></div>
 </div>

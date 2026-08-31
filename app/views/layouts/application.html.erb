@@ -107,6 +107,72 @@
         max-height: 650px;
         overflow-y: auto;
       }
+
+      /* GitHub Actions Step Accordions */
+      .step-card {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+        transition: border-color 0.2s;
+      }
+      .step-card.success { border-color: rgba(35, 134, 54, 0.4); }
+      .step-card.failure { border-color: rgba(218, 54, 51, 0.6); }
+      .step-card.in-progress { border-color: rgba(88, 166, 255, 0.5); }
+
+      .step-header {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: var(--bg-header);
+        border-bottom: 1px solid transparent;
+        font-size: 0.9rem;
+        list-style: none;
+      }
+      .step-header::-webkit-details-marker { display: none; }
+      .step-header:hover {
+        background-color: rgba(255, 255, 255, 0.03);
+      }
+      details[open] > .step-header {
+        border-bottom-color: var(--border);
+      }
+      .step-title {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-weight: 600;
+      }
+      .step-job-badge {
+        font-size: 0.75rem;
+        background-color: var(--border);
+        color: var(--text-muted);
+        padding: 0.15rem 0.45rem;
+        border-radius: 4px;
+        font-family: monospace;
+        font-weight: 400;
+      }
+      .step-status-text {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+      .step-body {
+        background-color: #030712;
+        color: #e5e7eb;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        padding: 0.75rem 1rem;
+        max-height: 500px;
+        overflow-y: auto;
+      }
+      .step-line {
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
     </style>
   </head>
 

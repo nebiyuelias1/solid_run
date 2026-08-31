@@ -21,7 +21,7 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
   test "should show run" do
     get run_url(@run)
     assert_response :success
-    assert_select "h3", "Live Build Logs"
+    assert_select "h3", "Execution Steps"
   end
 
   test "should rerun run" do
