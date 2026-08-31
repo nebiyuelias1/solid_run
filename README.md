@@ -18,7 +18,7 @@ Cloudflare Quick Tunnel (https://*.trycloudflare.com)
 Local WEBrick HTTP Server (http://127.0.0.1:4567)
           │
           ▼
-Local CI Event Printer (Terminal stdout)
+Local CI Event
 ```
 
 1. **Git Detection**: Inspects `git remote get-url origin` to extract the `owner/repo`.
