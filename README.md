@@ -2,7 +2,7 @@
 
 > A self-hosted, local GitHub Actions CI platform powered by **Rails 8**, **Solid Queue**, **Hotwire**, and **`act`**.
 
-Automatically creates a zero-login Cloudflare Quick Tunnel, registers temporary webhooks on your GitHub repositories, queues builds in SQLite-backed Solid Queue, runs your workflows locally in Docker via `act`, and streams live logs to a real-time web dashboard.
+Automatically creates a zero-login Cloudflare Quick Tunnel, registers temporary webhooks on your GitHub repositories, queues builds in SQLite-backed Solid Queue, runs your workflows locally in Docker via `act`, and streams live logs to a real-time dashboard.
 
 ---
 
@@ -37,23 +37,26 @@ Solid Queue Worker Supervisor
 ## 📦 Prerequisites
 
 Make sure the following are installed:
-* **Ruby (3.1+)**
-* **Git**
-* **GitHub CLI (`gh`)**: Authenticated via `gh auth login`
-* **Docker**: Running daemon
-* **act**: `https://github.com/nektos/act`
-* **cloudflared**: `https://github.com/cloudflare/cloudflared`
+
+- **Ruby (3.1+)**
+- **Git**
+- **GitHub CLI (`gh`)**: Authenticated via `gh auth login`
+- **Docker**: Running daemon
+- **act**: `https://github.com/nektos/act`
+- **cloudflared**: `https://github.com/cloudflare/cloudflared`
 
 ---
 
 ## 🚀 Installation
 
 ### Option 1: Install as a Ruby Gem
+
 ```bash
 gem install solid_run
 ```
 
 ### Option 2: 1-Line Installer Script
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/nebiyuelias1/solid_run/main/install.sh | bash
 ```
@@ -70,6 +73,7 @@ solid_run
 ```
 
 ### What Happens:
+
 1. Detects your GitHub remote origin (`owner/repo`).
 2. Starts the Rails 8 server & Solid Queue worker.
 3. Automatically opens a Cloudflare Quick Tunnel.
@@ -82,10 +86,11 @@ solid_run
 ## 📊 Real-Time Web Dashboard
 
 Open `http://localhost:3000` to:
-* View all active and past workflow runs.
-* Watch terminal build logs stream live in real-time.
-* Trigger 1-click workflow re-runs.
-* Click commit status links directly from GitHub pull requests or direct commits to `main`.
+
+- View all active and past workflow runs.
+- Watch terminal build logs stream live in real-time.
+- Trigger 1-click workflow re-runs.
+- Click commit status links directly from GitHub pull requests or direct commits to `main`.
 
 ---
 
