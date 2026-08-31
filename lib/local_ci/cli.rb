@@ -1,0 +1,109 @@
+# frozen_string_literal: true
+
+module LocalCI
+  class CLI
+    VERSION = "0.1.0"
+
+    attr_reader :options
+
+    def self.run(argv = ARGV)
+      new(argv).run
+    end
+
+    def initialize(argv = ARGV)
+      @argv = argv
+      @options = {
+        port: 4567,
+        remote: "origin",
+        events: Webhook::DEFAULT_EVENTS
+      }
+      parse_options!
+    end
+
+    def run
+      print_banner
+
+      git = Git.new(remote_name: @options[:remote])
+      puts "📁 Detected repository: #{EventPrinter::BOLD}#{git.full_name}#{EventPrinter::RESET} (remote: #{git.remote_url})"
+
+      server = Server.new(port: @options[:port])
+      server.start
+
+      tunnel = Tunnel.new(port: @options[:port])
+      tunnel_url = tunnel.start
+
+      webhook = Webhook.new(repo_full_name: git.full_name, tunnel_url: tunnel_url)
+      webhook.register(events: @options[:events])
+
+      # Graceful shutdown handler
+      shutdown_proc = proc do
+        puts "\n\n👋 Shutting down Local CI Runner..."
+        webhook.delete
+        tunnel.stop
+        server.stop
+        puts "🎉 Everything cleaned up successfully. Have a great day!"
+        exit 0
+      end
+
+      Signal.trap("INT") { shutdown_proc.call }
+      Signal.trap("TERM") { shutdown_proc.call }
+
+      puts "\n" + ("=" * 60)
+      puts "👂 #{EventPrinter::GREEN}Local CI is LIVE and listening for GitHub events!#{EventPrinter::RESET}"
+      puts "   Tunnel URL : #{tunnel_url}"
+      puts "   Webhook    : #{tunnel_url}/webhook"
+      puts "   Listening  : #{@options[:events].join(', ')}"
+      puts "   Press #{EventPrinter::BOLD}Ctrl+C#{EventPrinter::RESET} anytime to stop and auto-delete the webhook."
+      puts ("=" * 60) + "\n"
+
+      # Keep main thread alive
+      sleep
+    rescue LocalCI::Error => e
+      warn "\n#{EventPrinter::RED}❌ Error: #{e.message}#{EventPrinter::RESET}\n"
+      exit 1
+    rescue StandardError => e
+      warn "\n#{EventPrinter::RED}💥 Unexpected error: #{e.message}#{EventPrinter::RESET}"
+      warn e.backtrace.first(5).join("\n")
+      exit 1
+    end
+
+    private
+
+    def parse_options!
+      parser = OptionParser.new do |opts|
+        opts.banner = "Usage: local-ci [options]"
+
+        opts.on("-p", "--port PORT", Integer, "Port for local HTTP server (default: 4567)") do |p|
+          @options[:port] = p
+        end
+
+        opts.on("-r", "--remote REMOTE", String, "Git remote name to use (default: origin)") do |r|
+          @options[:remote] = r
+        end
+
+        opts.on("-e", "--events EVENTS", Array, "Comma-separated GitHub events to listen for (default: push,pull_request,workflow_dispatch,ping)") do |e|
+          @options[:events] = e
+        end
+
+        opts.on("-v", "--version", "Show version") do
+          puts "local-ci #{VERSION}"
+          exit 0
+        end
+
+        opts.on("-h", "--help", "Show help message") do
+          puts opts
+          exit 0
+        end
+      end
+
+      parser.parse!(@argv)
+    end
+
+    def print_banner
+      puts "\n"
+      puts "#{EventPrinter::CYAN}======================================================#{EventPrinter::RESET}"
+      puts "#{EventPrinter::BOLD} 🚀 Local CI Runner - Live GitHub Webhook Listener#{EventPrinter::RESET}"
+      puts "#{EventPrinter::CYAN}======================================================#{EventPrinter::RESET}\n"
+    end
+  end
+end
