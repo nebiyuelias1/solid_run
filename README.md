@@ -2,7 +2,7 @@
 
 A lightweight, zero-config local CI webhook listener.
 
-It automatically creates an ephemeral **Cloudflare Quick Tunnel**, registers a temporary webhook on your GitHub repository via the `gh` CLI, listens for incoming GitHub events (`push`, `pull_request`, `ping`, `workflow_dispatch`), and pretty-prints them in your terminal. When you stop the tool (`Ctrl+C`), it cleans up by deleting the webhook and terminating the tunnel.
+It automatically creates an ephemeral **Cloudflare Quick Tunnel**, registers a temporary web hook on your GitHub repository via the `gh` CLI, listens for incoming GitHub events (`push`, `pull_request`, `ping`, `workflow_dispatch`), and pretty-prints them in your terminal. When you stop the tool (`Ctrl+C`), it cleans up by deleting the web hook and terminating the tunnel.
 
 ---
 
