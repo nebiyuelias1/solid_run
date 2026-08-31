@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "open3"
+require "pty"
 require "tempfile"
 
 class ExecuteWorkflowJob < ApplicationJob
@@ -29,27 +29,46 @@ class ExecuteWorkflowJob < ApplicationJob
     workflow_files = (run.workflow_files || "").split(",").map(&:strip).reject(&:empty?)
     workflow_files = [".github/workflows/ci.yml"] if workflow_files.empty?
 
+    workspace = ENV["SOLID_RUN_WORKSPACE"] || Rails.root.to_s
     all_succeeded = true
+    accumulated_logs = +""
 
     Tempfile.create(["github_event_", ".json"]) do |file|
       file.write(payload_json || "{}")
       file.flush
 
       workflow_files.each do |workflow_file|
-        run.append_log("\n🚀 [Solid Run] Starting workflow: #{File.basename(workflow_file)}\n")
-        run.append_log("-" * 60 + "\n")
+        header = "\n🚀 [Solid Run] Starting workflow: #{File.basename(workflow_file)}\n" + ("-" * 60) + "\n"
+        accumulated_logs << header
+        run.append_log(header)
 
         cmd = ["act", "-W", workflow_file, run.event_type || "push", "-e", file.path]
 
-        workspace = ENV["SOLID_RUN_WORKSPACE"] || Rails.root.to_s
-        Open3.popen2e(*cmd, chdir: workspace) do |_stdin, stdout_and_err, wait_thr|
-          stdout_and_err.each_line do |line|
-            run.append_log(line)
+        begin
+          Dir.chdir(workspace) do
+            PTY.spawn(*cmd) do |stdout, _stdin, pid|
+              stdout.each_line do |line|
+                clean_line = line.gsub("\r\n", "\n").gsub("\r", "\n")
+                accumulated_logs << clean_line
+                run.append_log(clean_line)
+              end
+            rescue Errno::EIO
+              # Reached EOF on Linux PTY
+            ensure
+              _, status = Process.wait2(pid) if pid rescue nil
+              all_succeeded = false unless status&.success?
+            end
           end
-          all_succeeded = false unless wait_thr.value.success?
+        rescue StandardError => e
+          error_msg = "\n❌ [Solid Run Error] Failed to execute act: #{e.message}\n"
+          accumulated_logs << error_msg
+          run.append_log(error_msg)
+          all_succeeded = false
         end
 
-        run.append_log("-" * 60 + "\n")
+        footer = ("-" * 60) + "\n"
+        accumulated_logs << footer
+        run.append_log(footer)
       end
     end
 
@@ -59,10 +78,12 @@ class ExecuteWorkflowJob < ApplicationJob
     run.update!(
       status: final_status,
       completed_at: Time.current,
-      duration_seconds: duration
+      duration_seconds: duration,
+      logs: accumulated_logs
     )
 
-    run.append_log("\n🏁 [Solid Run] Run finished with status: #{final_status.upcase} in #{duration}s\n")
+    finish_msg = "\n🏁 [Solid Run] Run finished with status: #{final_status.upcase} in #{duration}s\n"
+    run.append_log(finish_msg)
 
     # Notify GitHub of final status with target_url
     if run.commit_sha.present?

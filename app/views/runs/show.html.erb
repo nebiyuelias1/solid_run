@@ -16,5 +16,5 @@
     </span>
   </div>
 
-  <div class="terminal" id="run_logs_<%= @run.id %>"><%= @run.logs.presence || "⏳ Waiting for Solid Queue worker..." %></div>
+  <div class="terminal" id="run_logs_<%= @run.id %>" data-controller="terminal"><%= @run.logs.presence || "⏳ Waiting for Solid Queue worker..." %></div>
 </div>
