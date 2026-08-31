@@ -1,4 +1,4 @@
-# Local CI Runner (Ruby)
+# Solid Run
 
 A lightweight, zero-config local CI webhook listener written in pure Ruby.
 
