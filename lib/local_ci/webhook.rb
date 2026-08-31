@@ -7,7 +7,7 @@ module LocalCI
   class Webhook
     attr_reader :repo_full_name, :tunnel_url, :hook_id
 
-    DEFAULT_EVENTS = %w[push pull_request workflow_dispatch ping].freeze
+    DEFAULT_EVENTS = %w[push pull_request workflow_run workflow_job].freeze
 
     def initialize(repo_full_name:, tunnel_url:)
       @repo_full_name = repo_full_name
@@ -33,16 +33,26 @@ module LocalCI
       }
 
       stdout, stderr, status = Open3.capture3(
+        { "MISE_QUIET" => "1" },
         "gh", "api", "repos/#{repo_full_name}/hooks",
         "--input", "-",
         stdin_data: JSON.generate(payload)
       )
 
+      response = parse_json_response(stdout)
+
       unless status.success?
-        raise Error, "Failed to register webhook on #{repo_full_name}: #{stderr.strip}"
+        errs = response["errors"]&.map { |e| e["message"] }&.compact&.join("; ")
+        error_details = if errs && !errs.empty?
+                          "#{response['message']}: #{errs}"
+                        elsif response["message"]
+                          response["message"]
+                        else
+                          stderr.strip
+                        end
+        raise Error, "Failed to register webhook on #{repo_full_name}: #{error_details}"
       end
 
-      response = JSON.parse(stdout)
       @hook_id = response["id"]
       puts "✅ Webhook registered successfully (Hook ID: #{@hook_id})"
       @hook_id
@@ -53,6 +63,7 @@ module LocalCI
 
       puts "🗑️  Deleting GitHub webhook (ID: #{@hook_id}) from #{repo_full_name}..."
       _stdout, stderr, status = Open3.capture3(
+        { "MISE_QUIET" => "1" },
         "gh", "api", "-X", "DELETE", "repos/#{repo_full_name}/hooks/#{@hook_id}"
       )
 
@@ -66,8 +77,20 @@ module LocalCI
 
     private
 
+    def parse_json_response(output)
+      return {} if output.nil? || output.strip.empty?
+
+      # Find first '{' or '[' to bypass any tool wrapper messages (e.g. mise/asdf shims)
+      json_start = output.index(/[\{\[]/)
+      return {} unless json_start
+
+      JSON.parse(output[json_start..])
+    rescue JSON::ParserError
+      {}
+    end
+
     def ensure_gh_authenticated!
-      _stdout, stderr, status = Open3.capture3("gh", "auth", "status")
+      _stdout, stderr, status = Open3.capture3({ "MISE_QUIET" => "1" }, "gh", "auth", "status")
       unless status.success?
         raise Error, "gh CLI is not authenticated.\nPlease run 'gh auth login' first."
       end

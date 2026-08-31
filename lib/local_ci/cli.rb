@@ -81,7 +81,7 @@ module LocalCI
           @options[:remote] = r
         end
 
-        opts.on("-e", "--events EVENTS", Array, "Comma-separated GitHub events to listen for (default: push,pull_request,workflow_dispatch,ping)") do |e|
+        opts.on("-e", "--events EVENTS", Array, "Comma-separated GitHub events to listen for (default: push,pull_request,workflow_run,workflow_job)") do |e|
           @options[:events] = e
         end
 

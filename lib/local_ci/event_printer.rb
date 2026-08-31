@@ -39,6 +39,10 @@ module LocalCI
         render_push
       when "pull_request"
         render_pull_request
+      when "workflow_run"
+        render_workflow_run
+      when "workflow_job"
+        render_workflow_job
       when "workflow_dispatch"
         render_workflow_dispatch
       when "issues"
@@ -97,6 +101,49 @@ module LocalCI
       puts "Branches   : #{YELLOW}#{head}#{RESET} -> #{YELLOW}#{base}#{RESET}"
       puts "Author     : #{MAGENTA}#{sender}#{RESET}"
       puts "URL        : #{pr["html_url"]}" if pr["html_url"]
+    end
+
+    def render_workflow_run
+      action = @payload["action"]
+      run = @payload["workflow_run"] || {}
+      workflow_name = run["name"] || @payload.dig("workflow", "name") || "Workflow"
+      head_branch = run["head_branch"]
+      conclusion = run["conclusion"] || run["status"]
+      actor = run.dig("actor", "login") || run.dig("triggering_actor", "login") || "unknown"
+      html_url = run["html_url"]
+
+      status_color = case conclusion
+                     when "success" then GREEN
+                     when "failure", "cancelled" then RED
+                     else YELLOW
+                     end
+
+      puts "Workflow   : #{BOLD}#{workflow_name}#{RESET} (Action: #{action})"
+      puts "Branch     : #{YELLOW}#{head_branch}#{RESET}"
+      puts "Status     : #{status_color}#{conclusion}#{RESET}"
+      puts "Triggered  : #{MAGENTA}#{actor}#{RESET}"
+      puts "URL        : #{html_url}" if html_url
+    end
+
+    def render_workflow_job
+      action = @payload["action"]
+      job = @payload["workflow_job"] || {}
+      name = job["name"] || "Job"
+      status = job["status"]
+      conclusion = job["conclusion"] || status
+      runner = job["runner_name"]
+      html_url = job["html_url"]
+
+      status_color = case conclusion
+                     when "success" then GREEN
+                     when "failure", "cancelled" then RED
+                     else YELLOW
+                     end
+
+      puts "Job Name   : #{BOLD}#{name}#{RESET} (Action: #{action})"
+      puts "Status     : #{status_color}#{conclusion}#{RESET}"
+      puts "Runner     : #{runner}" if runner
+      puts "URL        : #{html_url}" if html_url
     end
 
     def render_workflow_dispatch

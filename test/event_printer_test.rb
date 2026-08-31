@@ -77,4 +77,46 @@ class EventPrinterTest < Minitest::Test
     assert_includes output, "feature-branch"
     assert_includes output, "bob"
   end
+
+  def test_print_workflow_run_event
+    payload = {
+      "action" => "completed",
+      "workflow_run" => {
+        "name" => "Build & Test",
+        "head_branch" => "main",
+        "conclusion" => "success",
+        "actor" => { "login" => "charlie" }
+      }
+    }
+
+    output = capture_stdout do
+      LocalCI::EventPrinter.print("workflow_run", payload)
+    end
+
+    assert_includes output, "WORKFLOW_RUN"
+    assert_includes output, "Build & Test"
+    assert_includes output, "main"
+    assert_includes output, "success"
+    assert_includes output, "charlie"
+  end
+
+  def test_print_workflow_job_event
+    payload = {
+      "action" => "completed",
+      "workflow_job" => {
+        "name" => "unit-tests",
+        "conclusion" => "success",
+        "runner_name" => "github-runner-1"
+      }
+    }
+
+    output = capture_stdout do
+      LocalCI::EventPrinter.print("workflow_job", payload)
+    end
+
+    assert_includes output, "WORKFLOW_JOB"
+    assert_includes output, "unit-tests"
+    assert_includes output, "success"
+    assert_includes output, "github-runner-1"
+  end
 end
