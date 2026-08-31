@@ -7,7 +7,7 @@ class ExecuteWorkflowJob < ApplicationJob
   queue_as :default
 
   # Ensure only one workflow runs at a time per repository, or allow concurrency
-  limits_concurrency to: 1, key: ->(run_id) { WorkflowRun.find_by(id: run_id)&.repo || "global" }
+  limits_concurrency to: 1, key: ->(run_id, *) { WorkflowRun.find_by(id: run_id)&.repo || "global" }
 
   def perform(run_id, payload_json = nil)
     run = WorkflowRun.find_by(id: run_id)
