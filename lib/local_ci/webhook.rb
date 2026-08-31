@@ -5,13 +5,14 @@ require "open3"
 
 module LocalCI
   class Webhook
-    attr_reader :repo_full_name, :tunnel_url, :hook_id
+    attr_reader :repo_full_name, :tunnel_url, :hook_id, :secret
 
     DEFAULT_EVENTS = %w[push pull_request workflow_run workflow_job].freeze
 
-    def initialize(repo_full_name:, tunnel_url:)
+    def initialize(repo_full_name:, tunnel_url:, secret: nil)
       @repo_full_name = repo_full_name
       @tunnel_url = tunnel_url
+      @secret = secret
       @hook_id = nil
     end
 
@@ -21,15 +22,18 @@ module LocalCI
       webhook_url = "#{tunnel_url.chomp('/')}/webhook"
       puts "🔗 Registering GitHub webhook on #{repo_full_name} -> #{webhook_url}..."
 
+      config = {
+        url: webhook_url,
+        content_type: "json",
+        insecure_ssl: "0"
+      }
+      config[:secret] = @secret if @secret && !@secret.empty?
+
       payload = {
         name: "web",
         active: true,
         events: events,
-        config: {
-          url: webhook_url,
-          content_type: "json",
-          insecure_ssl: "0"
-        }
+        config: config
       }
 
       stdout, stderr, status = Open3.capture3(

@@ -5,11 +5,13 @@ require "json"
 
 module LocalCI
   class Server
-    attr_reader :port, :host, :webrick_server, :server_thread
+    attr_reader :port, :host, :secret, :verifier, :webrick_server, :server_thread
 
-    def initialize(port: 4567, host: "127.0.0.1", on_event: nil)
+    def initialize(port: 4567, host: "127.0.0.1", secret: nil, on_event: nil)
       @port = port
       @host = host
+      @secret = secret
+      @verifier = SignatureVerifier.new(@secret)
       @on_event = on_event || method(:default_event_handler)
       @webrick_server = nil
       @server_thread = nil
@@ -47,6 +49,7 @@ module LocalCI
 
     def mount_routes
       handler = @on_event
+      verifier = @verifier
 
       # Health check endpoint
       @webrick_server.mount_proc "/health" do |_req, res|
@@ -58,11 +61,23 @@ module LocalCI
       # Webhook endpoint
       webhook_proc = proc do |req, res|
         if req.request_method == "POST"
+          signature = req["x-hub-signature-256"]
+          body = req.body || ""
+
+          # Webhook HMAC-SHA256 signature verification
+          unless verifier.valid?(signature, body)
+            warn "⚠️  [SECURITY] Rejected request from #{req.peeraddr[2]}: Invalid or missing HMAC-SHA256 signature"
+            res.status = 401
+            res["Content-Type"] = "application/json"
+            res.body = JSON.generate({ error: "Unauthorized: Invalid or missing X-Hub-Signature-256" })
+            next
+          end
+
           event_type = req["x-github-event"] || "unknown"
           delivery_id = req["x-github-delivery"]
 
           begin
-            payload = req.body ? JSON.parse(req.body) : {}
+            payload = body.empty? ? {} : JSON.parse(body)
             handler.call(event_type, payload, delivery_id)
 
             res.status = 200
