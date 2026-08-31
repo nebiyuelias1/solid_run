@@ -14,7 +14,9 @@ class WebhooksController < ApplicationController
       return
     end
 
-    matcher = SolidRun::WorkflowMatcher.new
+    workspace = ENV["SOLID_RUN_WORKSPACE"] || Rails.root.to_s
+    workflows_dir = File.join(workspace, ".github", "workflows")
+    matcher = SolidRun::WorkflowMatcher.new(workflows_dir: workflows_dir)
     matched_files = matcher.match(event_type, payload)
 
     if matched_files.empty?

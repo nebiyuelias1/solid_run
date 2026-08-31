@@ -41,7 +41,8 @@ class ExecuteWorkflowJob < ApplicationJob
 
         cmd = ["act", "-W", workflow_file, run.event_type || "push", "-e", file.path]
 
-        Open3.popen2e(*cmd) do |_stdin, stdout_and_err, wait_thr|
+        workspace = ENV["SOLID_RUN_WORKSPACE"] || Rails.root.to_s
+        Open3.popen2e(*cmd, chdir: workspace) do |_stdin, stdout_and_err, wait_thr|
           stdout_and_err.each_line do |line|
             run.append_log(line)
           end

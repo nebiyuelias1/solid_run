@@ -52,8 +52,14 @@ module SolidRun
       puts "   Press Ctrl+C to stop and remove GitHub webhook."
       puts ("=" * 60) + "\n"
 
+      user_workspace = Dir.pwd
+
       rails_pid = Process.spawn(
-        { "SOLID_RUN_TUNNEL_URL" => tunnel_url, "SOLID_RUN_SECRET" => secret },
+        {
+          "SOLID_RUN_TUNNEL_URL" => tunnel_url,
+          "SOLID_RUN_SECRET" => secret,
+          "SOLID_RUN_WORKSPACE" => user_workspace
+        },
         "bin/rails", "server", "-p", port.to_s, "-b", "127.0.0.1",
         chdir: rails_root
       )
