@@ -36,6 +36,13 @@ module SolidRun
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
+    # Allow Cloudflare tunnel subdomains, local hosts, and test hosts
+    config.hosts << /.*\.trycloudflare\.com/
+    config.hosts << /.*localhost.*/
+    config.hosts << "127.0.0.1"
+    config.hosts << "www.example.com"
+    config.hosts << "example.org"
+
     # Don't generate system test files.
     config.generators.system_tests = nil
   end
