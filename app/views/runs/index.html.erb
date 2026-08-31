@@ -1,0 +1,38 @@
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <div>
+    <h1 style="margin: 0; font-size: 1.75rem; font-weight: 700;">Workflow Runs</h1>
+    <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
+      Live local CI execution via Solid Queue & act
+    </p>
+  </div>
+</div>
+
+<%= turbo_stream_from "workflow_runs" %>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th style="width: 130px;">Status</th>
+        <th>Commit / Message</th>
+        <th>Branch</th>
+        <th>Author</th>
+        <th>Duration</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="workflow_runs_list">
+      <% if @runs.any? %>
+        <% @runs.each do |run| %>
+          <%= render "runs/run_row", run: run %>
+        <% end %>
+      <% else %>
+        <tr id="empty_state">
+          <td colspan="6" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+            🚀 No workflow runs yet. Push a commit or open a PR to trigger local CI!
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

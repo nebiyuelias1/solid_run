@@ -1,0 +1,82 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+require_relative "../lib/solid_run"
+
+module SolidRun
+  class CLI
+    def self.start(argv = ARGV)
+      port = 3000
+      remote = "origin"
+      secret = SecureRandom.hex(20)
+
+      parser = OptionParser.new do |opts|
+        opts.banner = "Usage: solid_run [options]"
+        opts.on("-p", "--port PORT", Integer, "Port for Rails server (default: 3000)") { |p| port = p }
+        opts.on("-r", "--remote REMOTE", String, "Git remote to use (default: origin)") { |r| remote = r }
+        opts.on("-s", "--secret SECRET", String, "Custom HMAC-SHA256 secret") { |s| secret = s }
+        opts.on("-h", "--help", "Show help") { puts opts; exit 0 }
+      end
+      parser.parse!(argv)
+
+      puts "\n======================================================"
+      puts " ⚡ Solid Run — Rails 8 + Solid Queue Local CI Platform"
+      puts "======================================================\n"
+
+      git = SolidRun::Git.new(remote_name: remote)
+      puts "📁 Repository : #{git.full_name}"
+
+      # Ensure database is prepared
+      rails_root = File.expand_path("..", __dir__)
+      Dir.chdir(rails_root) do
+        system("bin/rails db:prepare > /dev/null 2>&1")
+      end
+
+      tunnel = SolidRun::Tunnel.new(port: port)
+      tunnel_url = tunnel.start
+
+      webhook = SolidRun::Webhook.new(repo_full_name: git.full_name, tunnel_url: tunnel_url, secret: secret)
+      webhook.register
+
+      ENV["SOLID_RUN_TUNNEL_URL"] = tunnel_url
+      ENV["SOLID_RUN_SECRET"] = secret
+      ENV["PORT"] = port.to_s
+
+      puts "\n" + ("=" * 60)
+      puts "🚀 Solid Run Platform is LIVE!"
+      puts "   📊 Dashboard   : http://localhost:#{port}"
+      puts "   🌐 Public URL  : #{tunnel_url}"
+      puts "   🔗 Webhook     : #{tunnel_url}/webhooks"
+      puts "   ⚙️  Solid Queue : Active (Worker concurrency: 1 per repo)"
+      puts "   Press Ctrl+C to stop and remove GitHub webhook."
+      puts ("=" * 60) + "\n"
+
+      rails_pid = Process.spawn(
+        { "SOLID_RUN_TUNNEL_URL" => tunnel_url, "SOLID_RUN_SECRET" => secret },
+        "bin/rails", "server", "-p", port.to_s, "-b", "127.0.0.1",
+        chdir: rails_root
+      )
+
+      cleanup = proc do
+        puts "\n\n👋 Shutting down Solid Run..."
+        begin
+          Process.kill("TERM", rails_pid)
+          Process.wait(rails_pid)
+        rescue StandardError
+        end
+        webhook.delete
+        tunnel.stop
+        puts "✨ Everything cleaned up. Goodbye!"
+        exit 0
+      end
+
+      Signal.trap("INT") { cleanup.call }
+      Signal.trap("TERM") { cleanup.call }
+
+      Process.wait(rails_pid)
+    end
+  end
+end
+
+SolidRun::CLI.start(ARGV)

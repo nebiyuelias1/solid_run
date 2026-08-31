@@ -1,0 +1,29 @@
+<tr id="run_row_<%= run.id %>">
+  <td>
+    <span class="badge badge-<%= run.status %>">
+      <%= run.status.tr('_', ' ') %>
+    </span>
+  </td>
+  <td>
+    <a href="<%= run_path(run) %>" style="font-weight: 600;">
+      <%= run.commit_message.presence || "Workflow ##{run.id}" %>
+    </a>
+    <div style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace; margin-top: 0.2rem;">
+      <%= run.short_sha %> · <%= run.event_type %>
+    </div>
+  </td>
+  <td>
+    <span style="background-color: var(--border); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-family: monospace;">
+      <%= run.branch || "main" %>
+    </span>
+  </td>
+  <td style="color: var(--text-muted); font-size: 0.9rem;">
+    <%= run.author || "unknown" %>
+  </td>
+  <td style="color: var(--text-muted); font-size: 0.85rem; font-family: monospace;">
+    <%= run.duration_display %>
+  </td>
+  <td style="color: var(--text-muted); font-size: 0.85rem;">
+    <%= time_ago_in_words(run.created_at) %> ago
+  </td>
+</tr>

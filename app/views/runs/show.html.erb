@@ -1,0 +1,20 @@
+<%= turbo_stream_from "run_#{@run.id}" %>
+
+<div style="margin-bottom: 1.5rem;">
+  <a href="/" style="font-size: 0.9rem; color: var(--text-muted);">&larr; Back to Workflow Runs</a>
+</div>
+
+<div id="run_header_<%= @run.id %>">
+  <%= render "runs/run_header", run: @run %>
+</div>
+
+<div style="margin-top: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+    <h3 style="margin: 0; font-size: 1.1rem;">Live Build Logs</h3>
+    <span style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">
+      <%= @run.workflow_files %>
+    </span>
+  </div>
+
+  <div class="terminal" id="run_logs_<%= @run.id %>"><%= @run.logs.presence || "⏳ Waiting for Solid Queue worker..." %></div>
+</div>
