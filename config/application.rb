@@ -36,6 +36,9 @@ module SolidRun
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
+    # Use Solid Queue for background job processing
+    config.active_job.queue_adapter = :solid_queue
+
     # Allow Cloudflare tunnel subdomains, local hosts, and test hosts
     config.hosts << /.*\.trycloudflare\.com/
     config.hosts << /.*localhost.*/
