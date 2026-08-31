@@ -17,7 +17,10 @@ module LocalCI
         remote: "origin",
         events: Webhook::DEFAULT_EVENTS,
         secret: SecureRandom.hex(20),
-        insecure: false
+        insecure: false,
+        act: true,
+        act_args: [],
+        report_status: true
       }
       parse_options!
     end
@@ -30,7 +33,18 @@ module LocalCI
 
       secret = @options[:insecure] ? nil : @options[:secret]
 
-      server = Server.new(port: @options[:port], secret: secret)
+      act_runner = ActRunner.new(
+        repo_full_name: git.full_name,
+        extra_args: @options[:act_args],
+        report_status: @options[:report_status]
+      )
+
+      on_event = proc do |event_type, payload, delivery_id|
+        EventPrinter.print(event_type, payload, delivery_id: delivery_id)
+        act_runner.execute(event_type, payload) if @options[:act]
+      end
+
+      server = Server.new(port: @options[:port], secret: secret, on_event: on_event)
       server.start
 
       tunnel = Tunnel.new(port: @options[:port])
@@ -53,10 +67,11 @@ module LocalCI
       Signal.trap("TERM") { shutdown_proc.call }
 
       puts "\n" + ("=" * 60)
-      puts "👂 #{EventPrinter::GREEN}Local CI is LIVE and listening for GitHub events!#{EventPrinter::RESET}"
+      puts "👂 #{EventPrinter::GREEN}Local CI is LIVE and ready to run workflows!#{EventPrinter::RESET}"
       puts "   Tunnel URL : #{tunnel_url}"
       puts "   Webhook    : #{tunnel_url}/webhook"
       puts "   Security   : #{secret ? "#{EventPrinter::GREEN}HMAC-SHA256 active#{EventPrinter::RESET}" : "#{EventPrinter::RED}Insecure (No signature check)#{EventPrinter::RESET}"}"
+      puts "   Runner     : #{@options[:act] ? "#{EventPrinter::GREEN}act (Docker enabled)#{EventPrinter::RESET}" : "#{EventPrinter::YELLOW}Listen-only (act disabled)#{EventPrinter::RESET}"}"
       puts "   Listening  : #{@options[:events].join(', ')}"
       puts "   Press #{EventPrinter::BOLD}Ctrl+C#{EventPrinter::RESET} anytime to stop and auto-delete the webhook."
       puts ("=" * 60) + "\n"
@@ -96,6 +111,18 @@ module LocalCI
 
         opts.on("--insecure", "Disable webhook signature verification") do
           @options[:insecure] = true
+        end
+
+        opts.on("--no-act", "Listen and print events only without running act") do
+          @options[:act] = false
+        end
+
+        opts.on("--act-args ARGS", String, "Custom arguments to pass to act (e.g. '-j test')") do |args|
+          @options[:act_args] = args.split
+        end
+
+        opts.on("--no-status", "Disable reporting commit statuses back to GitHub") do
+          @options[:report_status] = false
         end
 
         opts.on("-v", "--version", "Show version") do
