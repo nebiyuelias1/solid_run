@@ -9,7 +9,7 @@ It automatically creates an ephemeral **Cloudflare Quick Tunnel**, registers a t
 ## 🛠️ How It Works
 
 ```
-GitHub Repo Event (push/PR)
+GitHub Repo Event
           │
           ▼
 Cloudflare Quick Tunnel (https://*.trycloudflare.com)
